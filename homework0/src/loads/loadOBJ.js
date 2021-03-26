@@ -16,19 +16,20 @@ function loadOBJ(renderer, path, name) {
 
 	new THREE.MTLLoader(manager)
 		.setPath(path)
-		.load(name + '.mtl', function (materials) {
+		.load(name + '.mtl', function (materials) { // load material first 
 			materials.preload();
 			new THREE.OBJLoader(manager)
-				.setMaterials(materials)
+				.setMaterials(materials) // set material 
 				.setPath(path)
-				.load(name + '.obj', function (object) {
-					object.traverse(function (child) {
-						if (child.isMesh) {
-							let geo = child.geometry;
-							let mat;
+				.load(name + '.obj', function (object) { // load object
+					object.traverse(function (child) { // for each mesh 
+						if (child.isMesh) { 
+							let geo = child.geometry; // mesh geometry
+							let mat; // the material of this mesh 
 							if (Array.isArray(child.material)) mat = child.material[0];
 							else mat = child.material;
-
+							
+							// indeces buffer  ?
 							var indices = Array.from({ length: geo.attributes.position.count }, (v, k) => k);
 							let mesh = new Mesh({ name: 'aVertexPosition', array: geo.attributes.position.array },
 								{ name: 'aNormalPosition', array: geo.attributes.normal.array },
@@ -36,7 +37,7 @@ function loadOBJ(renderer, path, name) {
 								indices);
 
 							let colorMap = null;
-							if (mat.map != null) colorMap = new Texture(renderer.gl, mat.map.image);
+							if (mat.map != null) colorMap = new Texture(renderer.gl, mat.map.image);  // 
 							// MARK: You can change the myMaterial object to your own Material instance
 
 							// let textureSample = 0;
