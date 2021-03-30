@@ -1,6 +1,13 @@
 
+/**
+ * 
+ * @param {WebGlRenderer} renderer 自定义类型
+ * @param {string} path 指向目录/, 'assets/mary/
+ * @param {string} name OBJ的名字, 没有后缀 'Marry'
+ */
 function loadOBJ(renderer, path, name) {
 
+	// three.js library type
 	const manager = new THREE.LoadingManager();
 	manager.onProgress = function (item, loaded, total) {
 		console.log(item, loaded, total);
@@ -19,7 +26,7 @@ function loadOBJ(renderer, path, name) {
 		.load(name + '.mtl', function (materials) { // load material first 
 			materials.preload();
 			new THREE.OBJLoader(manager)
-				.setMaterials(materials) // set material 
+				.setMaterials(materials) // set material <<<<------------------------------
 				.setPath(path)
 				.load(name + '.obj', function (object) { // load object
 					object.traverse(function (child) { // for each mesh 
@@ -37,6 +44,7 @@ function loadOBJ(renderer, path, name) {
 								indices);
 
 							let colorMap = null;
+							// 绑定image 到opengl texture
 							if (mat.map != null) colorMap = new Texture(renderer.gl, mat.map.image);  // 
 							// MARK: You can change the myMaterial object to your own Material instance
 
@@ -55,7 +63,7 @@ function loadOBJ(renderer, path, name) {
 							// 		'uKd': { type: '3fv', value: mat.color.toArray() }
 							// 	},[],VertexShader, FragmentShader);
 							// }
-							let myMaterial = new PhongMaterial(mat.color.toArray (), colorMap , mat.specular.toArray (),renderer.lights [0]. entity.mat. intensity);
+							let myMaterial = new PhongMaterial(mat.color.toArray(), colorMap , mat.specular.toArray(),renderer.lights[0].entity.mat.intensity);
 			
 							let meshRender = new MeshRender(renderer.gl, mesh, myMaterial);
 							renderer.addMesh(meshRender);
