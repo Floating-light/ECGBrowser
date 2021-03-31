@@ -20,12 +20,17 @@ class DirectionalLight {
         let modelMatrix = mat4.create();
         let viewMatrix = mat4.create();
         let projectionMatrix = mat4.create();
-
+        
+        // https://www.npmjs.com/package/gl-mat4#orthooutmat4-leftnumber-rightnumber-bottomnumber-topnumber-nearnumber-farnumber
         // Model transform
+        mat4.translate(modelMatrix, modelMatrix, translate);
+        mat4.scale(modelMatrix, modelMatrix, scale);
 
         // View transform
-    
+        mat4.lookAt(viewMatrix, this.lightPos, this.focalPoint, this.lightUp);
         // Projection transform
+        // 这些范围要包括到场景的范围, 注意模型的大小(缩放), 相机的位置.
+        mat4.ortho(projectionMatrix, -90.0, 90.0, -90.0, 90.0, 0.1, 500);
 
         mat4.multiply(lightMVP, projectionMatrix, viewMatrix);
         mat4.multiply(lightMVP, lightMVP, modelMatrix);

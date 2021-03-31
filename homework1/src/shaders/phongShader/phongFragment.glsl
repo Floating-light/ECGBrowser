@@ -15,7 +15,7 @@ varying highp vec3 vFragPos;
 varying highp vec3 vNormal;
 
 // Shadow map related variables
-#define NUM_SAMPLES 20
+#define NUM_SAMPLES 60
 #define BLOCKER_SEARCH_NUM_SAMPLES NUM_SAMPLES
 #define PCF_NUM_SAMPLES NUM_SAMPLES
 #define NUM_RINGS 10
@@ -87,8 +87,40 @@ float findBlocker( sampler2D shadowMap,  vec2 uv, float zReceiver ) {
 	return 1.0;
 }
 
+// float PCF(sampler2D shadowMap, vec4 coords) {
+//   coords = coords * 0.5 + 0.5;
+//   float currentDepth = coords.z;
+//   poissonDiskSamples(coords.xy);
+//   float visibleNumber = 0.0;
+//   for(int i = 0; i < PCF_NUM_SAMPLES; ++i)
+//   {
+//     visibleNumber += (currentDepth - unpack(texture2D(shadowMap, coords.xy + poissonDisk[i]/float(PCF_NUM_SAMPLES) )) >  EPS ? 0.0 : 1.0 );
+//   }
+
+//   float shadow = visibleNumber / float(PCF_NUM_SAMPLES);
+//   return shadow;
+// }
+
+// My grid sample
 float PCF(sampler2D shadowMap, vec4 coords) {
-  return 1.0;
+  float step = 0.002;
+  coords = coords * 0.5 + 0.5;
+  float currentDepth = coords.z;
+
+  coords = coords - step * float(PCF_NUM_SAMPLES / 2);
+  float visibleNumber = 0.0;
+  for(int i = 0; i < PCF_NUM_SAMPLES; ++i)
+  {
+    float currentX = coords.x + float(i) * step;
+    for(int j = 0; j < PCF_NUM_SAMPLES; ++j)
+    {
+      float currentY = coords.y + float(j) * step;
+      visibleNumber += (unpack(texture2D(shadowMap, vec2(currentX, currentY))) < currentDepth ? 0.0 : 1.0 );
+    }
+  }
+
+  float shadow = visibleNumber / float(PCF_NUM_SAMPLES * PCF_NUM_SAMPLES);
+  return shadow;
 }
 
 float PCSS(sampler2D shadowMap, vec4 coords){
@@ -105,7 +137,15 @@ float PCSS(sampler2D shadowMap, vec4 coords){
 
 
 float useShadowMap(sampler2D shadowMap, vec4 shadowCoord){
-  return 1.0;
+
+  vec3 projPosition = shadowCoord.xyz / shadowCoord.w;
+  projPosition = projPosition * 0.5 + 0.5;
+  float cloestDepth = unpack(texture2D(shadowMap, projPosition.xy));
+
+  float currentDepth = projPosition.z;
+
+  float hasShadow = currentDepth > cloestDepth ? 0.0: 1.0;
+  return hasShadow;
 }
 
 vec3 blinnPhong() {
@@ -134,12 +174,12 @@ vec3 blinnPhong() {
 void main(void) {
 
   float visibility;
-  //visibility = useShadowMap(uShadowMap, vec4(shadowCoord, 1.0));
-  //visibility = PCF(uShadowMap, vec4(shadowCoord, 1.0));
-  //visibility = PCSS(uShadowMap, vec4(shadowCoord, 1.0));
+  // visibility = useShadowMap(uShadowMap, vPositionFromLight);
+  visibility = PCF(uShadowMap, vec4(vPositionFromLight.xyz, 1.0));
+  //visibility = PCSS(uShadowMap, vec4(vPositionFromLight.xyz, 1.0));
 
   vec3 phongColor = blinnPhong();
 
-  //gl_FragColor = vec4(phongColor * visibility, 1.0);
-  gl_FragColor = vec4(phongColor, 1.0);
+  gl_FragColor = vec4(phongColor*visibility , 1.0);
+  // gl_FragColor = vec4(phongColor, 1.0);
 }
