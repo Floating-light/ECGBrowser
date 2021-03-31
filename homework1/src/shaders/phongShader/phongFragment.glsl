@@ -19,7 +19,7 @@ varying highp vec3 vNormal;
 #define BLOCKER_SEARCH_NUM_SAMPLES NUM_SAMPLES
 #define PCF_NUM_SAMPLES NUM_SAMPLES
 #define NUM_RINGS 10
-
+#define LIGHT_WIDTH NUM_SAMPLES
 #define EPS 1e-3
 #define PI 3.141592653589793
 #define PI2 6.283185307179586
@@ -84,56 +84,72 @@ void uniformDiskSamples( const in vec2 randomSeed ) {
 }
 
 float findBlocker( sampler2D shadowMap,  vec2 uv, float zReceiver ) {
-	return 1.0;
-}
-
-// float PCF(sampler2D shadowMap, vec4 coords) {
-//   coords = coords * 0.5 + 0.5;
-//   float currentDepth = coords.z;
-//   poissonDiskSamples(coords.xy);
-//   float visibleNumber = 0.0;
-//   for(int i = 0; i < PCF_NUM_SAMPLES; ++i)
-//   {
-//     visibleNumber += (currentDepth - unpack(texture2D(shadowMap, coords.xy + poissonDisk[i]/float(PCF_NUM_SAMPLES) )) >  EPS ? 0.0 : 1.0 );
-//   }
-
-//   float shadow = visibleNumber / float(PCF_NUM_SAMPLES);
-//   return shadow;
-// }
-
-// My grid sample
-float PCF(sampler2D shadowMap, vec4 coords) {
-  float step = 0.002;
-  coords = coords * 0.5 + 0.5;
-  float currentDepth = coords.z;
-
-  coords = coords - step * float(PCF_NUM_SAMPLES / 2);
-  float visibleNumber = 0.0;
-  for(int i = 0; i < PCF_NUM_SAMPLES; ++i)
+  poissonDiskSamples(uv);
+  float BlockedDepth = 0.0;
+  float BlockerNum = 0.0;
+  for(int i = 0; i < BLOCKER_SEARCH_NUM_SAMPLES; ++i)
   {
-    float currentX = coords.x + float(i) * step;
-    for(int j = 0; j < PCF_NUM_SAMPLES; ++j)
+    float CurrentZ = unpack(texture2D(shadowMap, uv + poissonDisk[i]));
+    if(zReceiver -  CurrentZ > EPS)
     {
-      float currentY = coords.y + float(j) * step;
-      visibleNumber += (unpack(texture2D(shadowMap, vec2(currentX, currentY))) < currentDepth ? 0.0 : 1.0 );
+      BlockerNum += 1.0;
+      BlockedDepth += CurrentZ;
     }
   }
 
-  float shadow = visibleNumber / float(PCF_NUM_SAMPLES * PCF_NUM_SAMPLES);
-  return shadow;
+  return BlockerNum > 0.0 ? BlockedDepth/BlockerNum : 0.0;
 }
-
+// https://developer.download.nvidia.cn/whitepapers/2008/PCSS_Integration.pdf
 float PCSS(sampler2D shadowMap, vec4 coords){
-
+  coords = coords * 0.5 + 0.5;
   // STEP 1: avgblocker depth
-
+  float avgBlockerDepth = findBlocker(shadowMap, coords.xy, coords.z);
   // STEP 2: penumbra size
-
+  float Wpenumbra =  float(LIGHT_WIDTH) * (coords.z - avgBlockerDepth) / avgBlockerDepth;
   // STEP 3: filtering
+
   
   return 1.0;
 
 }
+
+float PCF(sampler2D shadowMap, vec4 coords, const int flitersize) {
+  coords = coords * 0.5 + 0.5;
+  float currentDepth = coords.z;
+  poissonDiskSamples(coords.xy);
+  float visibleNumber = 0.0;
+  const int INDEX = flitersize;
+  for(int i = 0; i < INDEX; ++i)
+  {
+    visibleNumber += (currentDepth - unpack(texture2D(shadowMap, coords.xy + poissonDisk[i]/float(PCF_NUM_SAMPLES) )) >  EPS ? 0.0 : 1.0 );
+  }
+
+  float shadow = visibleNumber / float(flitersize);
+  return shadow;
+}
+
+// My grid sample
+// float PCF(sampler2D shadowMap, vec4 coords) {
+//   float step = 0.002;
+//   coords = coords * 0.5 + 0.5;
+//   float currentDepth = coords.z;
+
+//   coords = coords - step * float(PCF_NUM_SAMPLES / 2);
+//   float visibleNumber = 0.0;
+//   for(int i = 0; i < PCF_NUM_SAMPLES; ++i)
+//   {
+//     float currentX = coords.x + float(i) * step;
+//     for(int j = 0; j < PCF_NUM_SAMPLES; ++j)
+//     {
+//       float currentY = coords.y + float(j) * step;
+//       visibleNumber += (unpack(texture2D(shadowMap, vec2(currentX, currentY))) < currentDepth ? 0.0 : 1.0 );
+//     }
+//   }
+
+//   float shadow = visibleNumber / float(PCF_NUM_SAMPLES * PCF_NUM_SAMPLES);
+//   return shadow;
+// }
+
 
 
 float useShadowMap(sampler2D shadowMap, vec4 shadowCoord){
@@ -175,8 +191,8 @@ void main(void) {
 
   float visibility;
   // visibility = useShadowMap(uShadowMap, vPositionFromLight);
-  visibility = PCF(uShadowMap, vec4(vPositionFromLight.xyz, 1.0));
-  //visibility = PCSS(uShadowMap, vec4(vPositionFromLight.xyz, 1.0));
+  visibility = PCF(uShadowMap, vec4(vPositionFromLight.xyz, 1.0), PCF_NUM_SAMPLES);
+  // visibility = PCSS(uShadowMap, vec4(vPositionFromLight.xyz, 1.0));
 
   vec3 phongColor = blinnPhong();
 
