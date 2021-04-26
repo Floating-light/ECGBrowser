@@ -89,11 +89,17 @@ namespace ProjEnv
 
     // template <typename T> T ProjectSH() {}
 
+    /**
+     * images Six cube map of evironment maps .
+     * width, height of single image
+     * channel The Channel of image
+    */
     template <size_t SHOrder>
     std::vector<Eigen::Array3f> PrecomputeCubemapSH(const std::vector<std::unique_ptr<float[]>> &images,
                                                     const int &width, const int &height,
                                                     const int &channel)
     {
+        // 每个像素的单位方向向量.
         std::vector<Eigen::Vector3f> cubemapDirs;
         cubemapDirs.reserve(6 * width * height);
         for (int i = 0; i < 6; i++)
@@ -113,6 +119,7 @@ namespace ProjEnv
             }
         }
         constexpr int SHNum = (SHOrder + 1) * (SHOrder + 1);
+        constexpr int SampleNum = 100;
         std::vector<Eigen::Array3f> SHCoeffiecents(SHNum);
         for (int i = 0; i < SHNum; i++)
             SHCoeffiecents[i] = Eigen::Array3f(0);
@@ -129,6 +136,11 @@ namespace ProjEnv
                     int index = (y * width + x) * channel;
                     Eigen::Array3f Le(images[i][index + 0], images[i][index + 1],
                                       images[i][index + 2]);
+                    auto func = [](double phi, double theta ) -> double 
+                    {
+                        return 0.0;
+                    };
+                    std::unique_ptr<std::vector<double>> res = sh::ProjectFunction(SHOrder, func, SampleNum);
                 }
             }
         }
@@ -188,14 +200,19 @@ public:
         int width, height, channel;
         std::vector<std::unique_ptr<float[]>> images =
             ProjEnv::LoadCubemapImages(cubePath.str(), width, height, channel);
+
         auto envCoeffs = ProjEnv::PrecomputeCubemapSH<SHOrder>(images, width, height, channel);
+
         m_LightCoeffs.resize(3, SHCoeffLength);
+
         for (int i = 0; i < envCoeffs.size(); i++)
         {
             lightFout << (envCoeffs)[i].x() << " " << (envCoeffs)[i].y() << " " << (envCoeffs)[i].z() << std::endl;
             m_LightCoeffs.col(i) = (envCoeffs)[i];
         }
+
         std::cout << "Computed light sh coeffs from: " << cubePath.str() << " to: " << lightPath.str() << std::endl;
+
         // Projection transport
         m_TransportSHCoeffs.resize(SHCoeffLength, mesh->getVertexCount());
         fout << mesh->getVertexCount() << std::endl;
@@ -214,8 +231,8 @@ public:
                 }
                 else
                 {
-                    // TODO: here you need to calculate shadowed transport term of a given direction
                     // TODO: 此处你需要计算给定方向下的shadowed传输项球谐函数值
+                    // TODO: here you need to calculate shadowed transport term of a given direction
                     return 0;
                 }
             };
