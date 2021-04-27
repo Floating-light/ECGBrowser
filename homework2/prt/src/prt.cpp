@@ -119,10 +119,11 @@ namespace ProjEnv
             }
         }
         constexpr int SHNum = (SHOrder + 1) * (SHOrder + 1);
-        constexpr int SampleNum = 100;
+
         std::vector<Eigen::Array3f> SHCoeffiecents(SHNum);
         for (int i = 0; i < SHNum; i++)
             SHCoeffiecents[i] = Eigen::Array3f(0);
+
         float sumWeight = 0;
         for (int i = 0; i < 6; i++)
         {
@@ -132,18 +133,29 @@ namespace ProjEnv
                 {
                     // TODO: here you need to compute light sh of each face of cubemap of each pixel
                     // TODO: 此处你需要计算每个像素下cubemap某个面的球谐系数
+                    float area = CalcArea(x, y, width, height);
+
+                    ++sumWeight;
                     Eigen::Vector3f dir = cubemapDirs[i * width * height + y * width + x];
                     int index = (y * width + x) * channel;
                     Eigen::Array3f Le(images[i][index + 0], images[i][index + 1],
                                       images[i][index + 2]);
-                    auto func = [](double phi, double theta ) -> double 
+                    for (int l = 0; l <= SHOrder; ++l)
                     {
-                        return 0.0;
-                    };
-                    std::unique_ptr<std::vector<double>> res = sh::ProjectFunction(SHOrder, func, SampleNum);
+                        for (int m = -l; m <= l; ++m)
+                        {
+                            double sh = sh::EvalSH(l, m, dir.cast<double>().normalized());
+                            SHCoeffiecents[sh::GetIndex(l, m)] += area * Le * sh;
+                        }
+                    }
                 }
             }
         }
+        //sumWeight = 4.0 * M_PI / (sumWeight * sumWeight);
+        //for (Eigen::Array3f& co : SHCoeffiecents)
+        //{
+        //    co *= sumWeight;
+        //}
         return SHCoeffiecents;
     }
 }
