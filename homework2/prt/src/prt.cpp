@@ -238,12 +238,20 @@ public:
                 if (m_Type == Type::Unshadowed)
                 {
                     // TODO: here you need to calculate unshadowed transport term of a given direction
-                    // TODO: 此处你需要计算给定方向下的unshadowed传输项球谐函数值
-                    return 0;
+                    double MDU = n.dot(wi);
+                    return MDU > 0.0 ? MDU : 0.0;
                 }
                 else
                 {
-                    // TODO: 此处你需要计算给定方向下的shadowed传输项球谐函数值
+                    double MDU = n.dot(wi);
+                    if (!scene->rayIntersect(nori::Ray3f(v, wi)) && MDU > 0.0)
+                    {
+                        return MDU;
+                    }
+                    else
+                    {
+                        return 0.0;
+                    }
                     // TODO: here you need to calculate shadowed transport term of a given direction
                     return 0;
                 }
