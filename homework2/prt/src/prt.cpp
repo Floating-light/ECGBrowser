@@ -262,9 +262,58 @@ public:
                 m_TransportSHCoeffs.col(i).coeffRef(j) = (*shCoeff)[j];
             }
         }
+        const int bouns = 1;
+        const int reflectionSampleCount = 100;
         if (m_Type == Type::Interreflection)
         {
             // TODO: leave for bonus
+            const int sample_side = static_cast<int>(floor(sqrt(reflectionSampleCount)));
+
+            for (int i = 0; i < mesh->getVertexCount(); ++i)
+            {
+                // Current vertex and normal.
+                Point3f v = mesh->getVertexPositions().col(i);
+                Normal3f n = mesh->getVertexNormals().col(i);
+
+                for (int b = 0; b < bouns; ++b)
+                {
+                    coeffs->assign(sh::GetCoefficientCount(SHOrder), 0.0);
+
+                    std::random_device rd;
+                    std::mt19937 gen(rd());
+                    std::uniform_real_distribution<> rng(0.0, 1.0);
+
+                    for (int t = 0; t < sample_side; t++)
+                    {
+                        for (int p = 0; p < sample_side; ++p)
+                        {
+                            double alpha = (t + rng(gen)) / sample_side;
+                            double beta = (p + rng(gen)) / sample_side;
+
+                            double phi = 2.0 * M_PI * beta;
+                            double theta = acos(2.0 * alpha - 1.0);
+
+                            Eigen::Array3d d = sh::ToVector(phi, theta);
+                            const auto wi = Vector3f(d.x(), d.y(), d.z());
+
+                            double MDU = wi.dot(n);
+                            nori::Intersection InterInfor;
+                            if (scene->rayIntersect(nori::Ray3f(v, wi), InterInfor) && MDU > 0.0f)
+                            {
+                                InterInfor.bary;
+                                nori::Point3f Index = InterInfor.tri_index;
+                                auto InterSHCoeffs = m_TransportSHCoeffs.col(InterInfor.tri_index.x()) * InterInfor.bary.x() + 
+                                    m_TransportSHCoeffs.col(InterInfor.tri_index.y()) * InterInfor.bary.y() +
+                                    m_TransportSHCoeffs.col(InterInfor.tri_index.z()) * InterInfor.bary.y();
+                                InterSHCoeffs *= MDU;
+                                m_TransportSHCoeffs += InterSHCoeffs;
+                            }
+
+                            
+                        }
+                    }
+                }
+            }
         }
 
         // Save in face format
@@ -290,6 +339,47 @@ public:
         }
         std::cout << "Computed SH coeffs"
                   << " to: " << transPath.str() << std::endl;
+    }
+
+    void DiffuseInterReflection(const Scene* scene, Point3f V, Normal3f N, const int sample_side, const int bouns)
+    {
+        std::unique_ptr<std::vector<double>> coeffs(new std::vector<double>());
+
+        coeffs->assign(sh::GetCoefficientCount(SHOrder), 0.0);
+
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_real_distribution<> rng(0.0, 1.0);
+
+        for (int t = 0; t < sample_side; t++)
+        {
+            for (int p = 0; p < sample_side; ++p)
+            {
+                double alpha = (t + rng(gen)) / sample_side;
+                double beta = (p + rng(gen)) / sample_side;
+
+                double phi = 2.0 * M_PI * beta;
+                double theta = acos(2.0 * alpha - 1.0);
+
+                Eigen::Array3d d = sh::ToVector(phi, theta);
+                const auto wi = Vector3f(d.x(), d.y(), d.z());
+
+                double MDU = wi.dot(N);
+                nori::Intersection InterInfor;
+                if (scene->rayIntersect(nori::Ray3f(V, wi), InterInfor) && MDU > 0.0f)
+                {
+                    InterInfor.bary;
+                    nori::Point3f Index = InterInfor.tri_index;
+                    auto InterSHCoeffs = m_TransportSHCoeffs.col(InterInfor.tri_index.x()) * InterInfor.bary.x() +
+                        m_TransportSHCoeffs.col(InterInfor.tri_index.y()) * InterInfor.bary.y() +
+                        m_TransportSHCoeffs.col(InterInfor.tri_index.z()) * InterInfor.bary.y();
+                    InterSHCoeffs *= MDU;
+                    coeffs += InterSHCoeffs.
+                }
+
+
+            }
+        }
     }
 
     Color3f Li(const Scene *scene, Sampler *sampler, const Ray3f &ray) const
