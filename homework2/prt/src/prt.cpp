@@ -307,6 +307,7 @@ public:
                                     m_TransportSHCoeffs.col(InterInfor.tri_index.z()) * InterInfor.bary.y();
                                 InterSHCoeffs *= MDU;
                                 m_TransportSHCoeffs += InterSHCoeffs;
+                             
                             }
 
                             
@@ -341,16 +342,19 @@ public:
                   << " to: " << transPath.str() << std::endl;
     }
 
-    void DiffuseInterReflection(const Scene* scene, Point3f V, Normal3f N, const int sample_side, const int bouns)
+    std::unique_ptr<std::vector<double>> DiffuseInterReflection(const Scene* scene, Point3f V, Normal3f N, const int sample_side, const int bouns)
     {
+        if (bouns <= 0) return;
         std::unique_ptr<std::vector<double>> coeffs(new std::vector<double>());
 
-        coeffs->assign(sh::GetCoefficientCount(SHOrder), 0.0);
+        const int CoefCount = sh::GetCoefficientCount(SHOrder);
+        coeffs->assign(CoefCount, 0.0);
 
         std::random_device rd;
         std::mt19937 gen(rd());
         std::uniform_real_distribution<> rng(0.0, 1.0);
 
+        const auto mesh = scene->getMeshes()[0];
         for (int t = 0; t < sample_side; t++)
         {
             for (int p = 0; p < sample_side; ++p)
@@ -374,12 +378,22 @@ public:
                         m_TransportSHCoeffs.col(InterInfor.tri_index.y()) * InterInfor.bary.y() +
                         m_TransportSHCoeffs.col(InterInfor.tri_index.z()) * InterInfor.bary.y();
                     InterSHCoeffs *= MDU;
-                    coeffs += InterSHCoeffs.
+
+                    for (int c = 0; c < CoefCount; ++c)
+                    {
+                        (*coeffs)[c] += InterSHCoeffs[c];
+                    }
+
+                    Normal3f NextNormal =  mesh->getVertexNormals()[InterInfor.tri_index.x()] * InterInfor.bary.x() +
+                        mesh->getVertexNormals()[InterInfor.tri_index.y()] * InterInfor.bary.y() +
+                        mesh->getVertexNormals()[InterInfor.tri_index.z()] * InterInfor.bary.y();
+                    std::unique_ptr<std::vector<double>> res = MDU * DiffuseInterReflection(scene, InterInfor.p, NextNormal, sample_side, bouns-1);
                 }
 
 
             }
         }
+        return coeffs;
     }
 
     Color3f Li(const Scene *scene, Sampler *sampler, const Ray3f &ray) const
