@@ -123,6 +123,9 @@ vec3 GetGBufferDiffuse(vec2 uv) {
  */
 vec3 EvalDiffuse(vec3 wi, vec3 wo, vec2 uv) {
   vec3 L = vec3(0.0);
+  vec3 kd = GetGBufferDiffuse(uv);
+  vec3 NormalWorld = GetGBufferNormalWorld(uv);
+  L = kd *max(wi * NormalWorld, 0.0);
   return L;
 }
 
