@@ -1,0 +1,76 @@
+function computeSquareMatrix_3by3(rotationMatrix){ // 计算方阵SA(-1) 3*3 
+	
+	// 1、pick ni - {ni}
+	let n1 = [1, 0, 0, 0]; let n2 = [0, 0, 1, 0]; let n3 = [0, 1, 0, 0];
+
+	// 2、{P(ni)} - A  A_inverse
+	let P1 = SHEval(n1[0], n1[1], n1[2], 3);
+	let P2 = SHEval(n2[0], n2[1], n2[2], 3);
+	let P3 = SHEval(n3[0], n3[1], n3[2], 3);
+	let A = math.matrix([[P1[1], P2[1], P3[1]],
+						 [P1[2], P2[2], P3[2]],
+						 [P1[3], P2[3], P3[3]]]);
+	let A_inverse = math.inv(A);
+
+	// 3、用 R 旋转 ni - {R(ni)}
+	let Rn1 = math.multiply(rotationMatrix, math.matrix(n1)).toArray();
+	let Rn2 = math.multiply(rotationMatrix, math.matrix(n2)).toArray();
+	let Rn3 = math.multiply(rotationMatrix, math.matrix(n3)).toArray();
+
+
+	// 4、R(ni) SH投影 - S
+	let PRn1 = SHEval(Rn1[0], Rn1[1], Rn1[2], 3);
+	let PRn2 = SHEval(Rn2[0], Rn2[1], Rn2[2], 3);
+	let PRn3 = SHEval(Rn3[0], Rn3[1], Rn3[2], 3);
+	
+	let S = math.matrix([[PRn1[1], PRn2[1], PRn3[1]],
+		[PRn1[2], PRn2[2], PRn3[2]],
+		[PRn1[3], PRn2[3], PRn3[3]]]);
+	// 5、S*A_inverse
+	return math.transpose(math.multiply(S, A_inverse));
+}
+
+function computeSquareMatrix_5by5(rotationMatrix){ // 计算方阵SA(-1) 5*5
+	
+	// 1、pick ni - {ni}
+	let k = 1 / math.sqrt(2);
+	let n1 = [1, 0, 0, 0]; let n2 = [0, 0, 1, 0]; let n3 = [k, k, 0, 0]; 
+	let n4 = [k, 0, k, 0]; let n5 = [0, k, k, 0];
+
+	// 2、{P(ni)} - A  A_inverse
+	let P1 = SHEval(n1[0], n1[1], n1[2], 3);
+	let P2 = SHEval(n2[0], n2[1], n2[2], 3);
+	let P3 = SHEval(n3[0], n3[1], n3[2], 3);
+	let P4 = SHEval(n4[0], n4[1], n4[2], 3);
+	let P5 = SHEval(n5[0], n5[1], n5[2], 3);
+	let A = math.matrix([[P1[4], P2[4], P3[4],P4[4],P5[4]],
+						 [P1[5], P2[5], P3[5],P4[5],P5[5]],
+						 [P1[6], P2[6], P3[6],P4[6],P5[6]],
+						 [P1[7], P2[7], P3[7],P4[7],P5[7]],
+						 [P1[8], P2[8], P3[8],P4[8],P5[8]],
+	]);
+	let A_inverse = math.inv(A);
+	// 3、用 R 旋转 ni - {R(ni)}
+	let Rn1 = math.multiply(rotationMatrix, math.matrix(n1)).toArray();
+	let Rn2 = math.multiply(rotationMatrix, math.matrix(n2)).toArray();
+	let Rn3 = math.multiply(rotationMatrix, math.matrix(n3)).toArray();
+	let Rn4 = math.multiply(rotationMatrix, math.matrix(n4)).toArray();
+	let Rn5 = math.multiply(rotationMatrix, math.matrix(n5)).toArray();
+
+	// 4、R(ni) SH投影 - S
+	let PRn1 = SHEval(Rn1[0], Rn1[1], Rn1[2], 3);
+	let PRn2 = SHEval(Rn2[0], Rn2[1], Rn2[2], 3);
+	let PRn3 = SHEval(Rn3[0], Rn3[1], Rn3[2], 3);
+	let PRn4 = SHEval(Rn4[0], Rn4[1], Rn4[2], 3);
+	let PRn5 = SHEval(Rn5[0], Rn5[1], Rn5[2], 3);
+
+	
+	let S = math.matrix([[PRn1[4], PRn2[4], PRn3[4],PRn4[4],PRn5[4]],
+						 [PRn1[5], PRn2[5], PRn3[5],PRn4[5],PRn5[5]],
+						 [PRn1[6], PRn2[6], PRn3[6],PRn4[6],PRn5[6]],
+						 [PRn1[7], PRn2[7], PRn3[7],PRn4[7],PRn5[7]],
+						 [PRn1[8], PRn2[8], PRn3[8],PRn4[8],PRn5[8]],
+						]);
+	// 5、S*A_inverse
+return math.transpose(math.multiply(S,A_inverse));
+}

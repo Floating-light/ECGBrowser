@@ -1,0 +1,10 @@
+完成了所有基础部分的作业， 截图以GraceCathedral场景的环境光效果展示。
+
+提高部分： 
+bonus1:
+用递归的方式实现了光线的多次弹射的计算，主要函数在prt.cpp 的Line : 315.
+
+bonus2:
+环境光的旋转， 在WebGLRenderer.js的Line: 64行, 调用tool.js中实现的函数， 获取旋转后的环境光系数。随后绑定到shader中的uniform变量中，以传入shader.
+
+具体旋转的实现完全参照tools.js中给出的三个函数的结构， 分别实现computeSquareMatrix_3by3 和computeSquareMatrix_5by5, 获取这两层band上的SH系数, 在getRotationPrecomputeL中作用于环境光系数得到结果。由于对JS了解不多，采用了比较简单粗暴的写法。
