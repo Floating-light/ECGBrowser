@@ -206,20 +206,21 @@ void main() {
   mat3 Trans = mat3(b1, b2, normal);
 
   float pdf ;
-  for ( int i = 0; i < SAMPLE_NUM; ++i)
-  {
-    float rand = Rand1(s);
-    vec3 Local = SampleHemisphereUniform(rand, pdf);
-    vec3 dir = normalize(Trans * Local);
-    vec3 hitPos;
-    if(RayMarch(vPosWorld.xyz, dir, hitPos))
-    {
-      vec2 HitUV = GetScreenCoordinate(hitPos);
-      L_Ind += (EvalDiffuse(normalize(hitPos - vPosWorld.xyz),normalize(uCameraPos - vPosWorld.xyz), uv) / pdf)
-        * EvalDiffuse(normalize(uLightDir), normalize(uCameraPos - hitPos), HitUV) 
-        * EvalDirectionalLight(HitUV);
-    }
-  }
+  // for ( int i = 0; i < SAMPLE_NUM; ++i)
+  // {
+  //   float rand = Rand1(s);
+  //   vec3 Local = SampleHemisphereUniform(rand, pdf);
+  //   vec3 dir = normalize(Trans * Local);
+  //   vec3 hitPos;
+  //   if(RayMarch(vPosWorld.xyz, dir, hitPos))
+  //   {
+  //     vec2 HitUV = GetScreenCoordinate(hitPos);
+
+  //     L_Ind += (EvalDiffuse(normalize(hitPos - vPosWorld.xyz),normalize(uCameraPos - vPosWorld.xyz), uv) / pdf)
+  //       * EvalDiffuse(normalize(uLightDir), normalize(uCameraPos - hitPos), HitUV) 
+  //       * EvalDirectionalLight(HitUV);
+  //   }
+  // }
   L_Ind = L_Ind / float(SAMPLE_NUM);
 
   L += L_Ind;
