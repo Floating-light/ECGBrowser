@@ -8,7 +8,7 @@
 #include "vec.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-
+#define M_PI 3.1415926535
 #include "stb_image_write.h"
 
 const int resolution = 128;
@@ -82,8 +82,23 @@ Vec3f IntegrateBRDF(Vec3f V, float roughness, float NdotV) {
     
     samplePoints sampleList = squareToCosineHemisphere(sample_count);
     for (int i = 0; i < sample_count; i++) {
-      // TODO: To calculate (fr * ni) / p_o here
-      
+        // TODO: To calculate (fr * ni) / p_o here
+        Vec3f H = normalize(V + sampleList.directions[i]);
+
+        Vec3f R0(0.97, 0.98, 0.98);
+        //Vec3f F = R0 + (Vec3f(1.0) - R0)*(pow(1.0 - dot(V, H), 5));
+        Vec3f F(1.0f);
+        float D = DistributionGGX(N, H, roughness);
+        float NoL = std::max(dot(N, sampleList.directions[i]), 0.f);
+        float G = GeometrySmith(roughness,NdotV, NoL );
+
+        Vec3f  Fr = F * D * G / (static_cast<double>(4.0f) * NdotV * NoL);
+
+        Vec3f Res = Fr * NoL / sampleList.PDFs[i];
+
+        A += Res.x;
+        B += Res.y;
+        C += Res.z;
     }
 
     return {A / sample_count, B / sample_count, C / sample_count};

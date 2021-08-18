@@ -12,7 +12,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-int resolution = 128;
+constexpr int resolution = 128;
 int channel = 3;
 
 Vec2f Hammersley(uint32_t i, uint32_t N) {
@@ -29,9 +29,21 @@ Vec3f ImportanceSampleGGX(Vec2f Xi, Vec3f N, float roughness) {
 
     float a = roughness * roughness;
 
-    // TODO: Copy the code from your previous work - Bonus 1
+    //TODO: in spherical space - Bonus 1
+    float phi = 2.0f * PI * Xi.x;
+    float co = std::sqrtf((1.0f - Xi.y) / (1.0f + (a * a - 1.0f) * Xi.y));
+    float si = std::sqrtf(1.0f - co * co);
 
-    return Vec3f(1.0f);
+    //TODO: from spherical space to cartesian space - Bonus 1
+    Vec3f H(std::cosf(phi) * si, std::sinf(phi) * si, co);
+
+    //TODO: tangent coordinates - Bonus 1
+    Vec3f tg = normalize(cross(Vec3f(1.0f, 0.0f, 0.0f), N));
+    Vec3f btg = cross(N, tg);
+
+    //TODO: transform H to tangent space - Bonus 1
+
+    return normalize(tg * H.x + btg * H.y + N * H.z);
 }
 
 
@@ -52,10 +64,10 @@ Vec3f IntegrateEmu(Vec3f V, float roughness, float NdotV, Vec3f Ei) {
         float NoV = std::max(dot(N, V), 0.0f);
 
         // TODO: To calculate Eavg here - Bonus 1
-        
+        Eavg += Ei * NoV * 2.0f;
     }
 
-    return Vec3f(1.0);
+    return Eavg / sample_count;
 }
 
 void setRGB(int x, int y, float alpha, unsigned char *data) {
@@ -77,7 +89,9 @@ Vec3f getEmu(int x, int y, int alpha, unsigned char *data, float NdotV, float ro
 }
 
 int main() {
-    unsigned char *Edata = stbi_load("./GGX_E_LUT.png", &resolution, &resolution, &channel, 3);
+    int readx, ready;
+
+    unsigned char *Edata = stbi_load("./GGX_E_LUT.png", &readx, &ready, &channel, 3);
     if (Edata == NULL) 
     {
 		std::cout << "ERROE_FILE_NOT_LOAD" << std::endl;

@@ -13,7 +13,9 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-int resolution = 128;
+#define M_PI 3.1415926535
+
+constexpr int resolution = 128;
 int channel = 3;
 
 typedef struct samplePoints {
@@ -79,15 +81,16 @@ Vec3f IntegrateEmu(Vec3f V, float roughness, float NdotV, Vec3f Ei) {
         float NoV = std::max(dot(N, V), 0.0f);
 
         // TODO: To calculate Eavg here
-        
+        Eavg += Ei * NoV * 2.0f;
     }
-
     return Eavg / sample_count;
 }
 
 
 int main() {
-    unsigned char *Edata = stbi_load("./GGX_E_MC_LUT.png", &resolution, &resolution, &channel, 3);
+    int readx, ready;
+    unsigned char *Edata = stbi_load("./GGX_E_MC_LUT.png", &readx, &ready, &channel, 3);
+    assert(readx == resolution && ready == resolution);
     if (Edata == NULL) 
     {
 		std::cout << "ERROE_FILE_NOT_LOAD" << std::endl;
