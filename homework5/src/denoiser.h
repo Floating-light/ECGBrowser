@@ -10,12 +10,13 @@
 
 struct FrameInfo {
   public:
-    Buffer2D<Float3> m_beauty;
-    Buffer2D<float> m_depth;
-    Buffer2D<Float3> m_normal;
-    Buffer2D<Float3> m_position;
-    Buffer2D<float> m_id;
-    std::vector<Matrix4x4> m_matrix;
+    Buffer2D<Float3> m_beauty; // Render result 
+    Buffer2D<float> m_depth; // depth 
+    Buffer2D<Float3> m_normal; 
+    Buffer2D<Float3> m_position; // world position of each pixel 
+    Buffer2D<float> m_id; // object id of each pixel, -1 if none
+    std::vector<Matrix4x4> m_matrix; // m_matrix[i] number i object transform form model coordinate to world coordinate, 
+                                     // last 1 world position to screen position, last 2 world position to camera position 
 };
 
 class Denoiser {

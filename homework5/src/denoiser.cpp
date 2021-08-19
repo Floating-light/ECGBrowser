@@ -46,6 +46,9 @@ Buffer2D<Float3> Denoiser::Filter(const FrameInfo &frameInfo) {
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
             // TODO: Joint bilateral filter
+            Float3 BaseColor = frameInfo.m_beauty(x,y);
+            Float3 Normal = frameInfo.m_normal(x, y);
+
             filteredImage(x, y) = frameInfo.m_beauty(x, y);
         }
     }
